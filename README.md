@@ -69,11 +69,14 @@ teste_seguranca/
 │   │   └── style.css
 │   │
 │   └── screenshots/
-│       ├── screenshot_Login_correto.png
-│       ├── screenshot_Senha_incorreta.png
-│       ├── screenshot_Campo_email_vazio.png
-│       ├── screenshot_Campo_senha_vazio.png
-│       └── screenshot_Tentativa_de_XSS.png
+│       ├── Cadastro_com_campos_vazios.png
+│       ├── E-mail_vazio.png
+│       ├── Login_correto.png
+│       ├── Senha_incorreta.png
+│       ├── Senha_vazia.png
+│       ├── SQL_Injection.png
+│       ├── XSS_no_Cadastro.png
+│       └── XSS_no_Login.png
 │
 └── banco/
     └── seguranca.sql
