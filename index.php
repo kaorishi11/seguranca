@@ -3,7 +3,7 @@ session_start();
 
 // Se não estiver logado, volta para o login
 if (!isset($_SESSION['usuario_id'])) {
-    header("Location: login.php");
+    header("Location: process_login.php");
     exit;
 }
 
