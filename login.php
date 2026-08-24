@@ -9,7 +9,7 @@ session_start();
 */
 
 $host = "localhost";
-$dbname = "acme_digital";
+$dbname = "seguranca";
 $user = "root";
 $password = "";
 
