@@ -30,7 +30,7 @@ $nomeSeguro = htmlspecialchars(
     >
     <link
         rel="stylesheet"
-        href="style.css"
+        href="assets/css/style.css"
     >
     <title>ACME Digital - Portal</title>
 
@@ -54,7 +54,7 @@ $nomeSeguro = htmlspecialchars(
         </p>
 
         <a
-            href="login.php?logout=1"
+            href="process_login.php?logout=1"
             class="btn logout"
         >
             Sair

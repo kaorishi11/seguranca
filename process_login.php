@@ -146,7 +146,7 @@ if (isset($_GET['logout'])) {
     session_destroy();
 
     header(
-        "Location: login.php?logout=sucesso"
+        "Location: process_login.php?logout=sucesso"
     );
 
     exit;
@@ -324,7 +324,7 @@ if (
     >
     <link
         rel="stylesheet"
-        href="login.css"
+        href="assets/css/login.css"
     >
     <title>ACME Digital - Login</title>
 
@@ -386,7 +386,7 @@ if (
         </form>
 
         <a
-            href="cadastro.php"
+            href="process_register.php"
             class="link"
         >
             Ainda não possui uma conta? Cadastre-se

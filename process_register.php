@@ -284,7 +284,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     >
     <link
         rel="stylesheet"
-        href="cadastro.css"
+        href="assets/css/cadastro.css"
         >
     <title>ACME Digital - Cadastro</title>
 
@@ -370,7 +370,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </form>
 
         <a
-            href="login.php"
+            href="process_login.php"
             class="link"
         >
             Já possui uma conta? Entrar
