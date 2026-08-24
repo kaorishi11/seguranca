@@ -27,6 +27,7 @@ O projeto tem como objetivos:
 
 ---
 
+
 ## Tecnologias utilizadas
 
 * HTML5
