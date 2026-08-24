@@ -68,9 +68,6 @@ teste_seguranca/
 │   ├── css/
 │   │   └── style.css
 │   │
-│   ├── js/
-│   │   └── script.js
-│   │
 │   └── screenshots/
 │       ├── screenshot_Login_correto.png
 │       ├── screenshot_Senha_incorreta.png
