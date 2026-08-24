@@ -4,6 +4,29 @@ session_start();
 
 /*
 |--------------------------------------------------------------------------
+| NÃO PERMITIR CACHE
+|--------------------------------------------------------------------------
+*/
+
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: 0");
+
+/*
+|--------------------------------------------------------------------------
+| PERMITIR SOMENTE POST
+|--------------------------------------------------------------------------
+*/
+
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+
+    header("Location: cadastro.php");
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
 | CONFIGURAÇÃO
 |--------------------------------------------------------------------------
 */
@@ -13,12 +36,27 @@ $dbname = "seguranca";
 $user = "root";
 $password = "";
 
-$mensagem = "";
-$tipoMensagem = "";
+/*
+|--------------------------------------------------------------------------
+| FUNÇÃO DE REDIRECIONAMENTO
+|--------------------------------------------------------------------------
+*/
+
+function voltarComMensagem(
+    string $mensagem,
+    string $tipo
+): void {
+
+    $_SESSION["mensagem"] = $mensagem;
+    $_SESSION["tipoMensagem"] = $tipo;
+
+    header("Location: cadastro.php");
+    exit;
+}
 
 /*
 |--------------------------------------------------------------------------
-| CONEXÃO COM BANCO
+| CONEXÃO
 |--------------------------------------------------------------------------
 */
 
@@ -36,14 +74,22 @@ try {
     );
 
     /*
-     * Cria o banco automaticamente.
-     */
+    |--------------------------------------------------------------------------
+    | CRIA BANCO
+    |--------------------------------------------------------------------------
+    */
 
     $pdoInicial->exec(
         "CREATE DATABASE IF NOT EXISTS `$dbname`
          CHARACTER SET utf8mb4
          COLLATE utf8mb4_unicode_ci"
     );
+
+    /*
+    |--------------------------------------------------------------------------
+    | CONECTA AO BANCO
+    |--------------------------------------------------------------------------
+    */
 
     $pdo = new PDO(
         "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
@@ -57,8 +103,10 @@ try {
     );
 
     /*
-     * Cria a tabela.
-     */
+    |--------------------------------------------------------------------------
+    | CRIA TABELA
+    |--------------------------------------------------------------------------
+    */
 
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS usuarios (
@@ -78,499 +126,196 @@ try {
 
 } catch (PDOException $e) {
 
-    die(
-        "Não foi possível conectar ao sistema."
+    voltarComMensagem(
+        "Não foi possível conectar ao sistema.",
+        "error"
     );
 }
 
 /*
 |--------------------------------------------------------------------------
-| CADASTRO
+| RECEBE DADOS
 |--------------------------------------------------------------------------
 */
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+$nome = trim(
+    $_POST["nome"] ?? ""
+);
 
-    $nome = trim(
-        $_POST["nome"] ?? ""
-    );
+$email = trim(
+    $_POST["email"] ?? ""
+);
 
-    $email = trim(
-        $_POST["email"] ?? ""
-    );
+$senha = $_POST["senha"] ?? "";
 
-    $senha = $_POST["senha"] ?? "";
-
-    $confirmarSenha =
-        $_POST["confirmarSenha"] ?? "";
-
-    /*
-     |--------------------------------------------------------------------------
-     | CAMPOS VAZIOS
-     |--------------------------------------------------------------------------
-     */
-
-    if (
-        $nome === "" ||
-        $email === "" ||
-        $senha === "" ||
-        $confirmarSenha === ""
-    ) {
-
-        $mensagem =
-            "Preencha todos os campos.";
-
-        $tipoMensagem = "warning";
-    }
-
-    /*
-     |--------------------------------------------------------------------------
-     | TAMANHO DO NOME
-     |--------------------------------------------------------------------------
-     */
-
-    elseif (
-        mb_strlen($nome) < 2 ||
-        mb_strlen($nome) > 100
-    ) {
-
-        $mensagem =
-            "O nome deve possuir entre 2 e 100 caracteres.";
-
-        $tipoMensagem = "warning";
-    }
-
-    /*
-     |--------------------------------------------------------------------------
-     | VALIDAÇÃO DO E-MAIL
-     |--------------------------------------------------------------------------
-     */
-
-    elseif (!filter_var(
-        $email,
-        FILTER_VALIDATE_EMAIL
-    )) {
-
-        $mensagem =
-            "Digite um e-mail válido.";
-
-        $tipoMensagem = "warning";
-    }
-
-    /*
-     |--------------------------------------------------------------------------
-     | VALIDAÇÃO DA SENHA
-     |--------------------------------------------------------------------------
-     */
-
-    elseif (strlen($senha) < 4) {
-
-        $mensagem =
-            "A senha deve possuir pelo menos 4 caracteres.";
-
-        $tipoMensagem = "warning";
-    }
-
-    /*
-     |--------------------------------------------------------------------------
-     | CONFIRMAÇÃO
-     |--------------------------------------------------------------------------
-     */
-
-    elseif ($senha !== $confirmarSenha) {
-
-        $mensagem =
-            "As senhas não coincidem.";
-
-        $tipoMensagem = "warning";
-    }
-
-    else {
-
-        /*
-         |--------------------------------------------------------------------------
-         | VERIFICA SE O E-MAIL JÁ EXISTE
-         |--------------------------------------------------------------------------
-         */
-
-        $stmt = $pdo->prepare("
-            SELECT id
-            FROM usuarios
-            WHERE email = :email
-            LIMIT 1
-        ");
-
-        $stmt->execute([
-            ":email" => $email
-        ]);
-
-        if ($stmt->fetch()) {
-
-            $mensagem =
-                "Este e-mail já está cadastrado.";
-
-            $tipoMensagem = "error";
-
-        } else {
-
-            /*
-             |--------------------------------------------------------------------------
-             | HASH DA SENHA
-             |--------------------------------------------------------------------------
-             |
-             | A senha original NÃO é armazenada no banco.
-             |
-             */
-
-            $senhaHash = password_hash(
-                $senha,
-                PASSWORD_DEFAULT
-            );
-
-            /*
-             |--------------------------------------------------------------------------
-             | INSERT SEGURO
-             |--------------------------------------------------------------------------
-             |
-             | Prepared Statement impede SQL Injection.
-             |
-             */
-
-            $stmt = $pdo->prepare("
-                INSERT INTO usuarios
-                (
-                    nome,
-                    email,
-                    senha
-                )
-                VALUES
-                (
-                    :nome,
-                    :email,
-                    :senha
-                )
-            ");
-
-            $stmt->execute([
-
-                ":nome" => $nome,
-
-                ":email" => $email,
-
-                ":senha" => $senhaHash
-
-            ]);
-
-            $mensagem =
-                "Cadastro realizado com sucesso!";
-
-            $tipoMensagem = "success";
-        }
-    }
-}
-
-?>
-
-<!DOCTYPE html>
-<html lang="pt-BR">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-    <link
-        rel="stylesheet"
-        href="assets/css/cadastro.css"
-        >
-    <title>ACME Digital - Cadastro</title>
-
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-</head>
-
-<body>
-
-    <div class="container">
-
-        <h1>ACME Digital</h1>
-
-        <p class="subtitulo">
-            Crie sua conta
-        </p>
-
-        <form
-            method="POST"
-            id="form-cadastro"
-            novalidate
-        >
-
-            <label for="nome">
-                Nome
-            </label>
-
-            <input
-                type="text"
-                id="nome"
-                name="nome"
-                maxlength="100"
-                autocomplete="name"
-                placeholder="Digite seu nome"
-            >
-
-            <label for="email">
-                E-mail
-            </label>
-
-            <input
-                type="email"
-                id="email"
-                name="email"
-                maxlength="150"
-                autocomplete="email"
-                placeholder="Digite seu e-mail"
-            >
-
-            <label for="senha">
-                Senha
-            </label>
-
-            <input
-                type="password"
-                id="senha"
-                name="senha"
-                maxlength="100"
-                autocomplete="new-password"
-                placeholder="Digite sua senha"
-            >
-
-            <label for="confirmarSenha">
-                Confirmar senha
-            </label>
-
-            <input
-                type="password"
-                id="confirmarSenha"
-                name="confirmarSenha"
-                maxlength="100"
-                autocomplete="new-password"
-                placeholder="Digite a senha novamente"
-            >
-
-            <button
-                type="submit"
-                id="btn-cadastro"
-            >
-                Criar conta
-            </button>
-
-        </form>
-
-        <a
-            href="process_login.php"
-            class="link"
-        >
-            Já possui uma conta? Entrar
-        </a>
-
-        <!-- Elemento disponível para testes Selenium -->
-        <div id="mensagem"></div>
-
-    </div>
-
-<?php if ($mensagem !== ""): ?>
-
-<script>
-
-Swal.fire({
-
-    icon:
-        <?= json_encode($tipoMensagem) ?>,
-
-    title:
-        <?= json_encode(
-            $tipoMensagem === "success"
-                ? "Sucesso!"
-                : "Atenção"
-        ) ?>,
-
-    text:
-        <?= json_encode($mensagem) ?>,
-
-    confirmButtonText: "OK"
-
-}).then(() => {
-
-    /*
-     * Depois de um cadastro bem-sucedido,
-     * direciona para o login.
-     */
-
-    <?php if ($tipoMensagem === "success"): ?>
-
-    window.location.href = "login.php";
-
-    <?php endif; ?>
-
-});
-
-</script>
-
-<?php endif; ?>
-
-<script>
+$confirmarSenha =
+    $_POST["confirmarSenha"] ?? "";
 
 /*
 |--------------------------------------------------------------------------
-| VALIDAÇÃO DO CADASTRO
+| CAMPOS VAZIOS
 |--------------------------------------------------------------------------
 */
 
-document
-    .getElementById("form-cadastro")
-    .addEventListener(
-        "submit",
-        function(event) {
+if (
+    $nome === "" ||
+    $email === "" ||
+    $senha === "" ||
+    $confirmarSenha === ""
+) {
 
-            const nome =
-                document
-                    .getElementById("nome")
-                    .value
-                    .trim();
-
-            const email =
-                document
-                    .getElementById("email")
-                    .value
-                    .trim();
-
-            const senha =
-                document
-                    .getElementById("senha")
-                    .value;
-
-            const confirmarSenha =
-                document
-                    .getElementById("confirmarSenha")
-                    .value;
-
-            /*
-             * Campos vazios
-             */
-
-            if (
-                nome === "" ||
-                email === "" ||
-                senha === "" ||
-                confirmarSenha === ""
-            ) {
-
-                event.preventDefault();
-
-                Swal.fire({
-
-                    icon: "warning",
-
-                    title:
-                        "Campos obrigatórios",
-
-                    text:
-                        "Preencha todos os campos.",
-
-                    confirmButtonText: "OK"
-
-                });
-
-                return;
-            }
-
-            /*
-             * E-mail
-             */
-
-            const emailValido =
-                /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-            if (
-                !emailValido.test(email)
-            ) {
-
-                event.preventDefault();
-
-                Swal.fire({
-
-                    icon: "warning",
-
-                    title:
-                        "E-mail inválido",
-
-                    text:
-                        "Digite um endereço de e-mail válido.",
-
-                    confirmButtonText: "OK"
-
-                });
-
-                return;
-            }
-
-            /*
-             * Senha
-             */
-
-            if (senha.length < 4) {
-
-                event.preventDefault();
-
-                Swal.fire({
-
-                    icon: "warning",
-
-                    title:
-                        "Senha muito curta",
-
-                    text:
-                        "A senha deve possuir pelo menos 4 caracteres.",
-
-                    confirmButtonText: "OK"
-
-                });
-
-                return;
-            }
-
-            /*
-             * Confirmação
-             */
-
-            if (senha !== confirmarSenha) {
-
-                event.preventDefault();
-
-                Swal.fire({
-
-                    icon: "warning",
-
-                    title:
-                        "Senhas diferentes",
-
-                    text:
-                        "As senhas digitadas não coincidem.",
-
-                    confirmButtonText: "OK"
-
-                });
-
-            }
-
-        }
+    voltarComMensagem(
+        "Preencha todos os campos.",
+        "warning"
     );
+}
 
-</script>
+/*
+|--------------------------------------------------------------------------
+| NOME
+|--------------------------------------------------------------------------
+*/
 
-</body>
+if (
+    mb_strlen($nome) < 2 ||
+    mb_strlen($nome) > 100
+) {
 
-</html>
+    voltarComMensagem(
+        "O nome deve possuir entre 2 e 100 caracteres.",
+        "warning"
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| E-MAIL
+|--------------------------------------------------------------------------
+*/
+
+if (!filter_var(
+    $email,
+    FILTER_VALIDATE_EMAIL
+)) {
+
+    voltarComMensagem(
+        "Digite um e-mail válido.",
+        "warning"
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| SENHA
+|--------------------------------------------------------------------------
+*/
+
+if (strlen($senha) < 4) {
+
+    voltarComMensagem(
+        "A senha deve possuir pelo menos 4 caracteres.",
+        "warning"
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| CONFIRMAÇÃO
+|--------------------------------------------------------------------------
+*/
+
+if ($senha !== $confirmarSenha) {
+
+    voltarComMensagem(
+        "As senhas não coincidem.",
+        "warning"
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| VERIFICA E-MAIL
+|--------------------------------------------------------------------------
+*/
+
+$stmt = $pdo->prepare("
+    SELECT id
+    FROM usuarios
+    WHERE email = :email
+    LIMIT 1
+");
+
+$stmt->execute([
+    ":email" => $email
+]);
+
+if ($stmt->fetch()) {
+
+    voltarComMensagem(
+        "Este e-mail já está cadastrado.",
+        "error"
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| HASH DA SENHA
+|--------------------------------------------------------------------------
+*/
+
+$senhaHash = password_hash(
+    $senha,
+    PASSWORD_DEFAULT
+);
+
+/*
+|--------------------------------------------------------------------------
+| INSERE USUÁRIO
+|--------------------------------------------------------------------------
+*/
+
+$stmt = $pdo->prepare("
+    INSERT INTO usuarios
+    (
+        nome,
+        email,
+        senha
+    )
+    VALUES
+    (
+        :nome,
+        :email,
+        :senha
+    )
+");
+
+$stmt->execute([
+
+    ":nome" => $nome,
+
+    ":email" => $email,
+
+    ":senha" => $senhaHash
+
+]);
+
+/*
+|--------------------------------------------------------------------------
+| SUCESSO
+|--------------------------------------------------------------------------
+*/
+
+$_SESSION["mensagem"] =
+    "Cadastro realizado com sucesso!";
+
+$_SESSION["tipoMensagem"] =
+    "success";
+
+/*
+|--------------------------------------------------------------------------
+| REDIRECIONA PARA LOGIN
+|--------------------------------------------------------------------------
+*/
+
+header("Location: login.php");
+exit;

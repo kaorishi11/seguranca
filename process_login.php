@@ -4,6 +4,17 @@ session_start();
 
 /*
 |--------------------------------------------------------------------------
+| NÃO PERMITIR CACHE
+|--------------------------------------------------------------------------
+*/
+
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: 0");
+
+/*
+|--------------------------------------------------------------------------
 | CONFIGURAÇÃO DO BANCO
 |--------------------------------------------------------------------------
 */
@@ -15,13 +26,48 @@ $password = "";
 
 /*
 |--------------------------------------------------------------------------
-| CONEXÃO E CRIAÇÃO AUTOMÁTICA DO BANCO
+| FUNÇÃO DE MENSAGEM
+|--------------------------------------------------------------------------
+*/
+
+function redirecionarComMensagem(
+    string $mensagem,
+    string $tipo = "error"
+): void {
+
+    $_SESSION["mensagem"] = $mensagem;
+    $_SESSION["tipoMensagem"] = $tipo;
+
+    header("Location: login.php");
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| PERMITIR SOMENTE POST
+|--------------------------------------------------------------------------
+*/
+
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+
+    header("Location: login.php");
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| CONEXÃO
 |--------------------------------------------------------------------------
 */
 
 try {
 
-    // Primeiro conecta ao MySQL sem selecionar banco
+    /*
+    |--------------------------------------------------------------------------
+    | CONECTA AO MYSQL
+    |--------------------------------------------------------------------------
+    */
+
     $pdoInicial = new PDO(
         "mysql:host=$host;charset=utf8mb4",
         $user,
@@ -33,14 +79,24 @@ try {
         PDO::ERRMODE_EXCEPTION
     );
 
-    // Cria o banco caso não exista
+    /*
+    |--------------------------------------------------------------------------
+    | CRIA BANCO
+    |--------------------------------------------------------------------------
+    */
+
     $pdoInicial->exec(
         "CREATE DATABASE IF NOT EXISTS `$dbname`
          CHARACTER SET utf8mb4
          COLLATE utf8mb4_unicode_ci"
     );
 
-    // Conecta ao banco
+    /*
+    |--------------------------------------------------------------------------
+    | CONECTA AO BANCO
+    |--------------------------------------------------------------------------
+    */
+
     $pdo = new PDO(
         "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
         $user,
@@ -54,7 +110,7 @@ try {
 
     /*
     |--------------------------------------------------------------------------
-    | CRIAÇÃO DA TABELA
+    | CRIA TABELA
     |--------------------------------------------------------------------------
     */
 
@@ -74,64 +130,21 @@ try {
         )
     ");
 
-    /*
-    |--------------------------------------------------------------------------
-    | USUÁRIO DE TESTE
-    |--------------------------------------------------------------------------
-    |
-    | Login:
-    | admin@teste.com
-    |
-    | Senha:
-    | 1234
-    |
-    */
-
-    $emailTeste = "admin@teste.com";
-
-    $stmtTeste = $pdo->prepare("
-        SELECT id
-        FROM usuarios
-        WHERE email = :email
-        LIMIT 1
-    ");
-
-    $stmtTeste->execute([
-        ":email" => $emailTeste
-    ]);
-
-    if (!$stmtTeste->fetch()) {
-
-        $senhaTeste = password_hash(
-            "1234",
-            PASSWORD_DEFAULT
-        );
-
-        $stmtInserirTeste = $pdo->prepare("
-            INSERT INTO usuarios
-            (nome, email, senha)
-            VALUES
-            (:nome, :email, :senha)
-        ");
-
-        $stmtInserirTeste->execute([
-            ":nome" => "Administrador",
-            ":email" => $emailTeste,
-            ":senha" => $senhaTeste
-        ]);
-    }
-
 } catch (PDOException $e) {
 
-    /*
-     * Não mostramos o erro do banco para o usuário.
-     * Isso evita exposição de informações internas.
-     */
-
-    die(
-        "Não foi possível conectar ao sistema."
+    redirecionarComMensagem(
+        "Não foi possível conectar ao sistema.",
+        "error"
     );
 }
+
+/*
+|--------------------------------------------------------------------------
+| IDENTIFICA A AÇÃO
+|--------------------------------------------------------------------------
+*/
+
+$acao = $_POST["acao"] ?? "login";
 
 /*
 |--------------------------------------------------------------------------
@@ -139,373 +152,188 @@ try {
 |--------------------------------------------------------------------------
 */
 
-if (isset($_GET['logout'])) {
+if ($acao === "logout") {
+
+    /*
+    |--------------------------------------------------------------------------
+    | APAGA TODOS OS DADOS DA SESSÃO
+    |--------------------------------------------------------------------------
+    */
 
     $_SESSION = [];
 
+    /*
+    |--------------------------------------------------------------------------
+    | REMOVE COOKIE DA SESSÃO
+    |--------------------------------------------------------------------------
+    */
+
+    if (ini_get("session.use_cookies")) {
+
+        $params = session_get_cookie_params();
+
+        setcookie(
+            session_name(),
+            "",
+            time() - 42000,
+            $params["path"],
+            $params["domain"],
+            $params["secure"],
+            $params["httponly"]
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DESTRÓI A SESSÃO
+    |--------------------------------------------------------------------------
+    */
+
     session_destroy();
 
-    header(
-        "Location: login.php?logout=sucesso"
-    );
+    /*
+    |--------------------------------------------------------------------------
+    | CRIA NOVA SESSÃO PARA A MENSAGEM
+    |--------------------------------------------------------------------------
+    */
 
+    session_start();
+
+    $_SESSION["mensagem"] =
+        "Você saiu da sua conta com sucesso.";
+
+    $_SESSION["tipoMensagem"] =
+        "success";
+
+    /*
+    |--------------------------------------------------------------------------
+    | REDIRECIONA
+    |--------------------------------------------------------------------------
+    */
+
+    header("Location: login.php");
     exit;
 }
 
 /*
 |--------------------------------------------------------------------------
-| PROCESSAMENTO DO LOGIN
+| LOGIN
 |--------------------------------------------------------------------------
 */
 
-$mensagem = "";
-$tipoMensagem = "";
+$email = trim(
+    $_POST["email"] ?? ""
+);
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-
-    /*
-     * trim() remove espaços desnecessários.
-     */
-
-    $email = trim(
-        $_POST["email"] ?? ""
-    );
-
-    $senha = $_POST["senha"] ?? "";
-
-    /*
-     |--------------------------------------------------------------------------
-     | VALIDAÇÃO DE CAMPOS VAZIOS
-     |--------------------------------------------------------------------------
-     */
-
-    if ($email === "" || $senha === "") {
-
-        $mensagem =
-            "Preencha todos os campos.";
-
-        $tipoMensagem = "warning";
-
-    }
-
-    /*
-     |--------------------------------------------------------------------------
-     | VALIDAÇÃO DO E-MAIL
-     |--------------------------------------------------------------------------
-     */
-
-    elseif (!filter_var(
-        $email,
-        FILTER_VALIDATE_EMAIL
-    )) {
-
-        $mensagem =
-            "Digite um e-mail válido.";
-
-        $tipoMensagem = "warning";
-
-    }
-
-    else {
-
-        /*
-         |--------------------------------------------------------------------------
-         | PREPARED STATEMENT
-         |--------------------------------------------------------------------------
-         |
-         | Não concatenamos o e-mail diretamente no SQL.
-         | Isso impede SQL Injection.
-         |
-         */
-
-        $stmt = $pdo->prepare("
-            SELECT
-                id,
-                nome,
-                email,
-                senha
-            FROM usuarios
-            WHERE email = :email
-            LIMIT 1
-        ");
-
-        $stmt->execute([
-            ":email" => $email
-        ]);
-
-        $usuario = $stmt->fetch(
-            PDO::FETCH_ASSOC
-        );
-
-        /*
-         |--------------------------------------------------------------------------
-         | VERIFICAÇÃO DA SENHA
-         |--------------------------------------------------------------------------
-         */
-
-        if (
-            $usuario &&
-            password_verify(
-                $senha,
-                $usuario["senha"]
-            )
-        ) {
-
-            /*
-             * Regenera o ID da sessão.
-             * Ajuda contra Session Fixation.
-             */
-
-            session_regenerate_id(true);
-
-            $_SESSION["usuario_id"] =
-                $usuario["id"];
-
-            $_SESSION["usuario_nome"] =
-                $usuario["nome"];
-
-            $_SESSION["usuario_email"] =
-                $usuario["email"];
-
-            /*
-             * Redirecionamento para área protegida.
-             */
-
-            header(
-                "Location: index.php"
-            );
-
-            exit;
-
-        } else {
-
-            /*
-             * Não informamos se o e-mail existe.
-             * Isso evita enumeração de usuários.
-             */
-
-            $mensagem =
-                "E-mail ou senha inválidos.";
-
-            $tipoMensagem = "error";
-        }
-    }
-}
+$senha = $_POST["senha"] ?? "";
 
 /*
 |--------------------------------------------------------------------------
-| MENSAGEM DE LOGOUT
+| CAMPOS VAZIOS
 |--------------------------------------------------------------------------
 */
 
 if (
-    isset($_GET["logout"]) &&
-    $_GET["logout"] === "sucesso"
+    $email === "" ||
+    $senha === ""
 ) {
 
-    $mensagem =
-        "Você saiu da sua conta.";
-
-    $tipoMensagem = "success";
+    redirecionarComMensagem(
+        "Preencha todos os campos.",
+        "warning"
+    );
 }
-
-?>
-
-<!DOCTYPE html>
-<html lang="pt-BR">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-    <link
-        rel="stylesheet"
-        href="login.css"
-    >
-    <title>ACME Digital - Login</title>
-
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-
-</head>
-
-<body>
-
-    <div class="container">
-
-        <h1>ACME Digital</h1>
-
-        <p class="subtitulo">
-            Acesse sua conta
-        </p>
-
-        <form
-            method="POST"
-            id="form-login"
-            novalidate
-        >
-
-            <label for="email">
-                E-mail
-            </label>
-
-            <input
-                type="email"
-                id="email"
-                name="email"
-                autocomplete="email"
-                maxlength="150"
-                placeholder="Digite seu e-mail"
-            >
-
-            <label for="senha">
-                Senha
-            </label>
-
-            <input
-                type="password"
-                id="senha"
-                name="senha"
-                autocomplete="current-password"
-                maxlength="100"
-                placeholder="Digite sua senha"
-            >
-
-            <button
-                type="submit"
-                id="btn-login"
-            >
-                Entrar
-            </button>
-
-        </form>
-
-        <a
-            href="cadastro.php"
-            class="link"
-        >
-            Ainda não possui uma conta? Cadastre-se
-        </a>
-
-        <!-- Elemento utilizado pelo Selenium -->
-        <div id="mensagem"></div>
-
-    </div>
-
-<?php if ($mensagem !== ""): ?>
-
-<script>
-
-Swal.fire({
-
-    icon:
-        <?= json_encode($tipoMensagem) ?>,
-
-    title:
-        <?= json_encode(
-            $tipoMensagem === "success"
-                ? "Sucesso!"
-                : "Atenção"
-        ) ?>,
-
-    text:
-        <?= json_encode($mensagem) ?>,
-
-    confirmButtonText: "OK"
-
-});
-
-</script>
-
-<?php endif; ?>
-
-<script>
 
 /*
 |--------------------------------------------------------------------------
-| VALIDAÇÃO NO FRONTEND
+| VALIDAÇÃO DE E-MAIL
 |--------------------------------------------------------------------------
-|
-| Também validamos antes de enviar ao servidor.
-| A validação do servidor continua sendo obrigatória.
-|
 */
 
-document
-    .getElementById("form-login")
-    .addEventListener("submit", function(event) {
+if (!filter_var(
+    $email,
+    FILTER_VALIDATE_EMAIL
+)) {
 
-        const email =
-            document
-                .getElementById("email")
-                .value
-                .trim();
+    redirecionarComMensagem(
+        "Digite um e-mail válido.",
+        "warning"
+    );
+}
 
-        const senha =
-            document
-                .getElementById("senha")
-                .value;
+/*
+|--------------------------------------------------------------------------
+| BUSCA USUÁRIO
+|--------------------------------------------------------------------------
+*/
 
-        if (
-            email === "" ||
-            senha === ""
-        ) {
+$stmt = $pdo->prepare("
+    SELECT
+        id,
+        nome,
+        email,
+        senha
+    FROM usuarios
+    WHERE email = :email
+    LIMIT 1
+");
 
-            event.preventDefault();
+$stmt->execute([
+    ":email" => $email
+]);
 
-            Swal.fire({
+$usuario = $stmt->fetch(
+    PDO::FETCH_ASSOC
+);
 
-                icon: "warning",
+/*
+|--------------------------------------------------------------------------
+| VERIFICA SENHA
+|--------------------------------------------------------------------------
+*/
 
-                title:
-                    "Campos obrigatórios",
+if (
+    !$usuario ||
+    !password_verify(
+        $senha,
+        $usuario["senha"]
+    )
+) {
 
-                text:
-                    "Preencha todos os campos antes de continuar.",
+    redirecionarComMensagem(
+        "E-mail ou senha inválidos.",
+        "error"
+    );
+}
 
-                confirmButtonText: "OK"
+/*
+|--------------------------------------------------------------------------
+| REGENERA ID DA SESSÃO
+|--------------------------------------------------------------------------
+*/
 
-            });
+session_regenerate_id(true);
 
-            return;
-        }
+/*
+|--------------------------------------------------------------------------
+| SALVA DADOS DO USUÁRIO
+|--------------------------------------------------------------------------
+*/
 
-        /*
-         * Validação simples de e-mail.
-         */
+$_SESSION["usuario_id"] =
+    $usuario["id"];
 
-        const emailValido =
-            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+$_SESSION["usuario_nome"] =
+    $usuario["nome"];
 
-        if (
-            !emailValido.test(email)
-        ) {
+$_SESSION["usuario_email"] =
+    $usuario["email"];
 
-            event.preventDefault();
+/*
+|--------------------------------------------------------------------------
+| LOGIN REALIZADO
+|--------------------------------------------------------------------------
+*/
 
-            Swal.fire({
-
-                icon: "warning",
-
-                title: "E-mail inválido",
-
-                text:
-                    "Digite um endereço de e-mail válido.",
-
-                confirmButtonText: "OK"
-
-            });
-        }
-
-    });
-
-</script>
-
-</body>
-
-</html>
+header("Location: index.php");
+exit;
