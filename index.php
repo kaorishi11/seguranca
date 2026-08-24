@@ -1,74 +1,97 @@
+<?php
+session_start();
+
+// Se não estiver logado, volta para o login
+if (!isset($_SESSION['usuario_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
+$nome = $_SESSION['usuario_nome'] ?? 'Usuário';
+
+// Proteção contra XSS ao exibir o nome
+$nomeSeguro = htmlspecialchars(
+    $nome,
+    ENT_QUOTES,
+    'UTF-8'
+);
+?>
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>ACME Digital</title>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>ACME Digital - Portal</title>
+
+    <!-- SweetAlert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
         }
 
         body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
             min-height: 100vh;
-            background: linear-gradient(135deg, #111827, #2563eb);
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
         }
 
         .container {
             background: white;
-            width: 420px;
+            width: 90%;
+            max-width: 600px;
             padding: 40px;
-            border-radius: 15px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         h1 {
-            color: #1e3a8a;
+            color: #1e293b;
             margin-bottom: 15px;
         }
 
         p {
-            color: #555;
+            color: #64748b;
             margin-bottom: 30px;
         }
 
-        .botoes {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        a {
-            text-decoration: none;
-            padding: 14px;
+        .btn {
+            display: inline-block;
+            padding: 13px 25px;
+            margin: 5px;
             border-radius: 8px;
-            color: white;
+            text-decoration: none;
             font-weight: bold;
-            background: #2563eb;
+            cursor: pointer;
         }
 
-        a:hover {
-            background: #1d4ed8;
+        .logout {
+            background: #dc2626;
+            color: white;
         }
 
-        .cadastro {
-            background: #16a34a;
+        .logout:hover {
+            background: #b91c1c;
         }
 
-        .cadastro:hover {
-            background: #15803d;
-        }
     </style>
+
 </head>
 
 <body>
@@ -78,20 +101,19 @@
         <h1>ACME Digital</h1>
 
         <p>
-            Portal de acesso da empresa
+            Bem-vindo, <strong><?= $nomeSeguro ?></strong>!
         </p>
 
-        <div class="botoes">
+        <p>
+            Você está autenticado no portal.
+        </p>
 
-            <a href="login.php">
-                Entrar
-            </a>
-
-            <a href="cadastro.php" class="cadastro">
-                Criar conta
-            </a>
-
-        </div>
+        <a
+            href="login.php?logout=1"
+            class="btn logout"
+        >
+            Sair
+        </a>
 
     </div>
 
