@@ -1,0 +1,58 @@
+[
+  {
+    "teste": "Login correto",
+    "status": "PASS",
+    "mensagem": "Login realizado com sucesso.",
+    "observacao": "Usuário válido recebeu acesso.",
+    "screenshot": "C:\\xampp\\htdocs\\Selerium_Jamile\\seguranca\\screenshots\\Login_correto.png"
+  },
+  {
+    "teste": "Senha incorreta",
+    "status": "PASS",
+    "mensagem": "Atenção\nE-mail ou senha inválidos.\nOK",
+    "observacao": "Credencial inválida foi bloqueada.",
+    "screenshot": "C:\\xampp\\htdocs\\Selerium_Jamile\\seguranca\\screenshots\\Senha_incorreta.png"
+  },
+  {
+    "teste": "E-mail vazio",
+    "status": "FAIL",
+    "mensagem": "",
+    "observacao": "O sistema não bloqueou o campo vazio.",
+    "screenshot": "C:\\xampp\\htdocs\\Selerium_Jamile\\seguranca\\screenshots\\E-mail_vazio.png"
+  },
+  {
+    "teste": "Senha vazia",
+    "status": "FAIL",
+    "mensagem": "",
+    "observacao": "O sistema não bloqueou a senha vazia.",
+    "screenshot": "C:\\xampp\\htdocs\\Selerium_Jamile\\seguranca\\screenshots\\Senha_vazia.png"
+  },
+  {
+    "teste": "XSS no Login",
+    "status": "PASS",
+    "mensagem": "",
+    "observacao": "Payload XSS não foi executado nem refletido no HTML.",
+    "screenshot": "C:\\xampp\\htdocs\\Selerium_Jamile\\seguranca\\screenshots\\XSS_no_Login.png"
+  },
+  {
+    "teste": "SQL Injection",
+    "status": "FAIL",
+    "mensagem": "",
+    "observacao": "A tentativa de SQL Injection pode ter concedido acesso.",
+    "screenshot": "C:\\xampp\\htdocs\\Selerium_Jamile\\seguranca\\screenshots\\SQL_Injection.png"
+  },
+  {
+    "teste": "Cadastro com campos vazios",
+    "status": "FAIL",
+    "mensagem": "",
+    "observacao": "Cadastro vazio não foi bloqueado.",
+    "screenshot": "C:\\xampp\\htdocs\\Selerium_Jamile\\seguranca\\screenshots\\Cadastro_com_campos_vazios.png"
+  },
+  {
+    "teste": "XSS no Cadastro",
+    "status": "PASS",
+    "mensagem": "",
+    "observacao": "Payload XSS não foi executado nem refletido.",
+    "screenshot": "C:\\xampp\\htdocs\\Selerium_Jamile\\seguranca\\screenshots\\XSS_no_Cadastro.png"
+  }
+]

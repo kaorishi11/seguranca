@@ -28,7 +28,7 @@ const path = require("path");
 // ==========================================================
 
 const BASE_URL =
-    "http://localhost/SELENIUM_JAMILE/seguranca";
+    "http://localhost/Selerium_Jamile/seguranca/";
 
 const LOGIN_URL =
     `${BASE_URL}/login.php`;
@@ -37,7 +37,7 @@ const CADASTRO_URL =
     `${BASE_URL}/cadastro.php`;
 
 const TIMEOUT =
-    5000;
+    50000;
 
 const SCREENSHOT_DIR =
     path.join(
