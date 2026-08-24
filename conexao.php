@@ -1,4 +1,5 @@
 <?php
+// Jamile de Oliveira Franquilim e Geovanna Kaori Shimada
 
 $host = "localhost";
 $usuario = "root";

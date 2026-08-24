@@ -1,4 +1,5 @@
 <?php
+// Jamile de Oliveira Franquilim e Geovanna Kaori Shimada
 
 session_start();
 
@@ -131,12 +132,6 @@ if (!filter_var(
         "warning"
     );
 }
-
-/*
-|--------------------------------------------------------------------------
-| SENHA
-|--------------------------------------------------------------------------
-*/
 
 if (strlen($senha) < 4) {
 
