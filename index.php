@@ -3,7 +3,7 @@ session_start();
 
 // Se não estiver logado, volta para o login
 if (!isset($_SESSION['usuario_id'])) {
-    header("Location: process_login.php");
+    header("Location: login.php");
     exit;
 }
 
@@ -18,6 +18,9 @@ $nomeSeguro = htmlspecialchars(
 ?>
 
 <!DOCTYPE html>
+<link rel="stylesheet" href="assets/css/cadastro.css">
+<link rel="stylesheet" href="assets/css/login.css">
+<link rel="stylesheet" href="assets/css/style.css">
 <html lang="pt-BR">
 
 <head>
@@ -54,7 +57,7 @@ $nomeSeguro = htmlspecialchars(
         </p>
 
         <a
-            href="process_login.php?logout=1"
+            href="login.php?logout=1"
             class="btn logout"
         >
             Sair
