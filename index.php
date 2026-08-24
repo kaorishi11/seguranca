@@ -21,6 +21,14 @@ $nomeSeguro = htmlspecialchars(
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <link
+        rel="stylesheet"
+        href="assets/css/style.css"
+    >
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="assets/css/index.css">
     <title>ACME Digital - Portal</title>
@@ -53,6 +61,14 @@ $nomeSeguro = htmlspecialchars(
 
         <div class="botoes">
 
+<<<<<<< HEAD
+        <a
+            href="process_login.php?logout=1"
+            class="btn logout"
+        >
+            Sair
+        </a>
+=======
             <a href="login.php" class="btn btn-entrar">
                 <svg viewBox="0 0 24 24">
                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
@@ -77,6 +93,7 @@ $nomeSeguro = htmlspecialchars(
         <div class="footer">
             &copy; 2026 <a href="#">ACME Digital</a> — Todos os direitos reservados
         </div>
+>>>>>>> 0fd5aa39a078b708fcb7398712fbac25bd8a8fd5
 
     </div>
 
